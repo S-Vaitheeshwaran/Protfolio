@@ -10,7 +10,7 @@
   const EMAILJS_PUBLIC_KEY = 'irGf4e_uC-d0FobGp';
   const EMAILJS_SERVICE_ID = 'service_xww9vn6';
   const EMAILJS_NOTIFICATION_TEMPLATE_ID = 'template_vht5ms3';
-  const EMAILJS_AUTOREPLY_TEMPLATE_ID = '';
+  const EMAILJS_AUTOREPLY_TEMPLATE_ID = 'template_0o8id6g';
   const CONTACT_EMAIL = 'vaitheeshwaran375@gmail.com';
 
   const emailJsConfigured = EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_NOTIFICATION_TEMPLATE_ID;
@@ -170,17 +170,30 @@
       if (emailJsConfigured) {
         if (!window.emailjs) throw new Error('EmailJS failed to load');
         const templateData = {
+          name,
+          email,
           from_name: name,
           from_email: email,
           subject: data.subject.trim() || `Portfolio enquiry from ${name}`,
           message,
-          to_email: CONTACT_EMAIL
+          to_email: CONTACT_EMAIL,
+          reply_to: email
         };
         await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_NOTIFICATION_TEMPLATE_ID, templateData);
         if (EMAILJS_AUTOREPLY_TEMPLATE_ID) {
-          await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_AUTOREPLY_TEMPLATE_ID, templateData);
+          try {
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_AUTOREPLY_TEMPLATE_ID, {
+              ...templateData,
+              to_email: email
+            });
+          } catch (autoReplyError) {
+            console.error('EmailJS auto-reply failed:', autoReplyError);
+            showFeedback('✓ Your message was sent. The confirmation email could not be delivered.', 'success');
+            form.reset();
+            return;
+          }
         }
-        showFeedback('✓ Thank you! Your message has been sent. I will get back to you within 24 hours.', 'success');
+        showFeedback('✓ Thank you! Your message has been sent. I will get back to as soon as possible .', 'success');
       } else {
         const subject = encodeURIComponent(data.subject.trim() || `Portfolio enquiry from ${name}`);
         const body = encodeURIComponent(`${message}\n\n— ${name} (${email})`);
